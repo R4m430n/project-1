@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK with Buildozer
 
 on:
   push:
@@ -8,35 +8,63 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
-      - name: 🔹 Kodni yuklab olish
+      # 1. GitHub repo kodini yuklab olish
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🔹 Python o‘rnatish
+      # 2. Python versiyasini o‘rnatish
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: 🔹 Buildozer va kerakli paketlarni o‘rnatish
+      # 3. Zaruriy tizim kutubxonalarini o‘rnatish
+      - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip python3-setuptools python3-wheel python3-virtualenv
+          sudo apt install -y \
+            build-essential \
+            git \
+            python3-pip \
+            python3-setuptools \
+            python3-wheel \
+            unzip \
+            openjdk-17-jdk \
+            zlib1g-dev \
+            libncurses5-dev \
+            libtinfo5 \
+            libffi-dev \
+            libssl-dev \
+            libsqlite3-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libfreetype6-dev
+
+      # 4. Buildozer va python-for-android ni o‘rnatish
+      - name: Install Buildozer
+        run: |
           pip install --upgrade pip
-          pip install buildozer cython
+          pip install Cython==0.29.36
+          pip install buildozer==1.5.0
+          pip install python-for-android==2024.1.1
 
-      - name: 🔹 Android SDK/NDK kerakli fayllar
+      # 5. Kivy va boshqa kutubxonalarni o‘rnatish
+      - name: Install Python dependencies
         run: |
-          sudo apt install -y libltdl-dev libffi-dev libssl-dev
-          sudo apt install -y adb
+          pip install kivy==2.3.0
+          pip install kivymd==1.1.1
 
-      - name: 🔹 APK yig‘ish
+      # 6. APK build qilish
+      - name: Build APK
         run: |
-          buildozer -v android debug
+          buildozer android debug
 
-      - name: 📦 APK faylini yuklash (Artifact)
+      # 7. APK faylni GitHub Actions natijasi sifatida saqlash
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: my-app
+          name: my_app_apk
           path: bin/*.apk
